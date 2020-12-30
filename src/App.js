@@ -2,7 +2,6 @@ import axios from 'axios';
 import React from 'react';
 import { Component } from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
-import Home from './components/Home';
 import Form from './components/Form';
 import Navs from './components/Navs';
 import PhotoList from './components/PhotoList';
@@ -12,7 +11,6 @@ import apiKey from './config';
 
 // strings for the default navs
 const defaultLoads = ['cars', 'helicopters', 'airplanes'];
-
 class App extends Component {
   constructor() {
     super();
@@ -22,12 +20,23 @@ class App extends Component {
       cars: [],
       helicopters: [],
       airplanes: [],
+      homePhotos: [],
     };
   }
 
+
+  
   // on page load, arrrays from the default strings are loaded into state for use in the default navs
   componentDidMount() {
-    defaultLoads.forEach((vehicle) => {
+    
+    let homePhotosArray = []
+    // prevents no results from flashing on page refresh
+    this.setState({loading: true, homePhotos: []})
+
+    // makes sure all axios calls have completed before updating the loading state
+    let bar = new Promise((resolve) => {
+    
+    defaultLoads.forEach((vehicle, index) => {
       axios
         .get(
           `https://www.flickr.com/services/rest/?method=flickr.photos.search&api_key=${apiKey}&text=${vehicle}&per_page=24&format=json&nojsoncallback=1`
@@ -36,27 +45,38 @@ class App extends Component {
           switch (vehicle) {
             case 'cars':
               this.setState({ cars: response.data.photos.photo });
+              homePhotosArray.splice(0,0,response.data.photos.photo[0])
               break;
             case 'helicopters':
               this.setState({ helicopters: response.data.photos.photo });
+              homePhotosArray.splice(1,0,response.data.photos.photo[0])
               break;
             case 'airplanes':
               this.setState({ airplanes: response.data.photos.photo });
+              homePhotosArray.splice(2,0,response.data.photos.photo[0])
               break;
+
             default:
               // do nothing
           }
-        })
+          if(index === Array.length -1) resolve()
+      })
         .catch((error) => {
           'error fetching data';
         });
-        return
-    });
-    
+
+    })
+  })
+
+  bar.then(() => {
+    this.setState({loading: false, homePhotos: homePhotosArray})
+    this.searchFlikr(this.props.history.location.state);
+  })
   }
   // function to handle forward and backward clicks, keeping history and photos in sync
   componentDidUpdate() {
     // prevents an update at every component update
+
     window.onpopstate = (e) => {
       if (
         this.props.history.location.state !== this.state.searchString &&
@@ -67,7 +87,11 @@ class App extends Component {
         this.searchFlikr(historyQuery);
       }
     };
+
+
   }
+
+
   // takes a string and searches flikr for up to 24 images
   searchFlikr = (search) => {
     this.setState({ loading: true });
@@ -95,11 +119,17 @@ class App extends Component {
         <div className="container">
           <Form searchFunction={this.searchFlikr} />
           <Navs />
-          {this.state.loading ? (
-            <p>Loading...</p>
-          ) : (
+          {
+          (this.state.loading) 
+            ? <p>Loading...</p>
+            : 
+            
             <Switch>
-              <Route exact path="/" render={() => <Home />} />
+              <Route exact path="/" render={() => (
+                  <PhotoList
+                    data={this.state.homePhotos}
+                    search={''}
+                  />)} />
               <Route
                 exact
                 path="/search/:query"
@@ -136,7 +166,7 @@ class App extends Component {
               />
               <Route component={NotFound} />
             </Switch>
-          )}
+          }
         </div>
       </BrowserRouter>
     );

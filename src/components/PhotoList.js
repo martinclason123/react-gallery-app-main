@@ -4,6 +4,10 @@ import Photo from './Photo';
 
 // receives an array of photo information, and provides all the information needed to the photo component
 const PhotoList = (props) => {
+  let resultsMessage = `Results for ${props.search}`
+  if (props.search === ''){
+    resultsMessage = '';
+  }
   let photos;
   if (props.data.length > 0) {
     photos = props.data.map((photo) => (
@@ -13,13 +17,14 @@ const PhotoList = (props) => {
       />
     ));
     // if the array is empty, photos is set to a not found jsx
+  
   } else {
     photos = <NoResults />;
   }
 
   return (
     <div className="photo-container">
-      <h2>Results for {props.search}</h2>
+      <h2>{resultsMessage}</h2>
       <ul>{photos}</ul>
     </div>
   );
