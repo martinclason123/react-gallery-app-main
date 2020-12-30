@@ -9,6 +9,7 @@ import PhotoList from './components/PhotoList';
 import NotFound from './components/NotFound';
 import apiKey from './config';
 
+
 // strings for the default navs
 const defaultLoads = ['cars', 'helicopters', 'airplanes'];
 
